@@ -214,12 +214,17 @@ private:
     }
 
     // Attempts to fix: https://github.com/azerothcore/mod-learn-spells/issues/35
+    bool WarlockLevelHasLifeTapRank(uint8 playerLevel)
+    {
+        return lifetapConversion.find(playerLevel) != lifetapConversion.end();
+    }
+
     void WarlockLifeTapOverride(Player *player, uint32 playerFamily)
     {
         if (playerFamily != SPELLFAMILY_WARLOCK)
             return;
 
-        if (auto spellId = lifetapConversion[player->getLevel()]; spellId != lifetapConversion.end())
+        if (WarlockLevelHasLifeTapRank(player->getLevel()))
         {
             SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
             if (!spellInfo)
