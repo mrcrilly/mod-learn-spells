@@ -42,6 +42,9 @@ private:
         28271, 28272, 61025, 61305, 61721, 61780,
         // OPTIONAL QUEST SPELLS
         18540,
+
+        // WARLOCK'S LIFETAP (ALL RANKS) DUE TO RANK "LEVEL UNKNOWN" BUG
+        1454,1455,1456,11687,11688,11689,27222,57946
     };
 
     struct AddSpell // Additional Spell Entry
@@ -53,6 +56,20 @@ private:
     using SpellFamilyToExtraSpells = std::unordered_map<uint32, std::vector<AddSpell>>;
     using AdditionalSpellsList = std::unordered_map<uint8, SpellFamilyToExtraSpells>;
     // -------------------------------------------- ^^^^^ level
+    
+    using WarlockLifeTapRankToLevel = std::map<uint8, uint8>;
+
+    WarlockLifeTapRankToLevel lifetapConversion =
+    {
+        {6, 1454},  // Level 6, Life Tap: Rank 1
+        {16,1455},  // Level 16, Life Tap: Rank 2
+        {26,1456},  // Level 26, Life Tap: Rank 3
+        {36,11687}, // Level 36, Life Tap: Rank 4
+        {46,11688}, // Level 46, Life Tap: Rank 5
+        {56,11689}, // Level 56, Life Tap: Rank 6
+        {68,27222}, // Level 68, Life Tap: Rank 7
+        {80,57946}, // Level 80, Life Tap: Rank 8
+    }
 
     AdditionalSpellsList m_additionalSpells =
     {
@@ -196,10 +213,41 @@ private:
         return m_ignoreSpells.find(spellID) != m_ignoreSpells.end();
     }
 
+    // Attempts to fix: https://github.com/azerothcore/mod-learn-spells/issues/35
+    void WarlockLifeTapOverride(Player *player, uint32 playerFamily)
+    {
+        if (playerFamily != SPELLFAMILY_WARLOCK)
+            return;
+
+        if (auto spellId = lifetapConversion[player->getLevel()]; spellId != lifetapConversion.end())
+        {
+            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+            if (!spellInfo)
+                return;
+
+            if (!player->HasSpell(spellInfo->Id))
+                player->learnSpell(spellInfo->Id);
+        }
+    }
+
     void LearnSpellsForNewLevel(Player* player, uint8 fromLevel)
     {
         uint8 upToLevel = player->getLevel();
         uint32 family = GetSpellFamily(player);
+
+        // Here we're "fixing" the issue regarding Warlock Life Tap
+        // spell information not being available server-side.
+        if(family == SPELLFAMILY_WARLOCK)
+        {
+            // This "fix" only applies to level 6 onwards
+            if (player->getLevel() >= 6)
+                // Handle Life Tap related spell management
+                // manually using the hack above: WarlockLifeTapOverride()
+                WarlockLifeTapOverride(player, family);
+
+            // From here onwards, all Life Tap spells/ranks will be ignored
+            // by the reminder of this algorithm due to m_ignoreSpells, above.
+        }
 
         for (int level = fromLevel; level <= upToLevel; level++)
         {
