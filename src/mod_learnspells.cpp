@@ -69,7 +69,7 @@ private:
         {56,11689}, // Level 56, Life Tap: Rank 6
         {68,27222}, // Level 68, Life Tap: Rank 7
         {80,57946}, // Level 80, Life Tap: Rank 8
-    }
+    };
 
     AdditionalSpellsList m_additionalSpells =
     {
