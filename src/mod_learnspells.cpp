@@ -224,9 +224,13 @@ private:
         if (playerFamily != SPELLFAMILY_WARLOCK)
             return;
 
-        if (WarlockLevelHasLifeTapRank(player->getLevel()))
+        uint8 const playerLevel = player->getLevel();
+
+        if (WarlockLevelHasLifeTapRank(playerLevel))
         {
+            uint32 spellId = lifetapConversion[playerLevel];
             SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+            
             if (!spellInfo)
                 return;
 
